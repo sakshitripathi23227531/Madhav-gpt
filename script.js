@@ -18,10 +18,10 @@ function showSection(id) {
   if (id === 'wisdom') loadDailyWisdom();
 }
 
-function setLang(lang) {
+function setLang(lang, event = null) {
   currentLang = lang;
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
+  if (event) event.target.classList.add('active');
 }
 
 // ─── AI CHAT ───────────────────────────────────────────────────────────────

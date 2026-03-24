@@ -5,14 +5,20 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "serve": "npx http-server . -p 3000 -o",
+    "dev:all": "concurrently -k \"fuser -k 3001/tcp 2>/dev/null; npm run dev\" \"npm run serve\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
+    "better-sqlite3": "^12.8.0",
     "cors": "^2.8.5",
+    "dotenv": "^17.3.1",
     "express": "^4.18.2"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
+    "http-server": "^14.1.1",
     "nodemon": "^3.0.2"
   }
 }

@@ -1,3 +1,4 @@
+require('dotenv').config();
 const db = require("./database");
 const express = require('express');
 const cors = require('cors');
@@ -7,7 +8,66 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ─── VALIDATE API KEY ─────────────────────────────────────────────────────────
+
+if (!process.env.ANTHROPIC_API_KEY) {
+  console.error('\n❌ ERROR: ANTHROPIC_API_KEY is not set!');
+  console.error('📝 Please add your API key to the .env file:');
+  console.error('   ANTHROPIC_API_KEY=your_api_key_here');
+  console.error('\n   Get your key from: https://console.anthropic.com/\n');
+  process.exit(1);
+}
+
+if (process.env.ANTHROPIC_API_KEY === 'your_anthropic_api_key_here') {
+  console.error('\n⚠️  WARNING: ANTHROPIC_API_KEY is still set to the placeholder!');
+  console.error('📝 Please edit the .env file and add your actual API key.');
+  console.error('   Get your key from: https://console.anthropic.com/\n');
+  process.exit(1);
+}
+
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+// ─── ERROR HELPERS ─────────────────────────────────────────────────────────────
+
+function handleApiError(res, error) {
+  console.error('API Error:', error.message);
+  
+  // Handle specific Anthropic API errors
+  if (error.message?.includes('authentication') || error.message?.includes('API key')) {
+    return res.status(401).json({
+      error: 'Invalid API key. Please check your ANTHROPIC_API_KEY in .env file.',
+      code: 'INVALID_API_KEY'
+    });
+  }
+  
+  if (error.message?.includes('rate_limit') || error.message?.includes('rate limit')) {
+    return res.status(429).json({
+      error: 'Rate limit exceeded. Please wait a moment and try again.',
+      code: 'RATE_LIMIT'
+    });
+  }
+  
+  if (error.message?.includes('insufficient_quota') || error.message?.includes('credit')) {
+    return res.status(402).json({
+      error: 'Insufficient API credits. Please add credits to your Anthropic account.',
+      code: 'INSUFFICIENT_CREDITS'
+    });
+  }
+  
+  if (error.message?.includes('connection') || error.message?.includes('network')) {
+    return res.status(503).json({
+      error: 'Unable to connect to AI service. Please check your internet connection.',
+      code: 'CONNECTION_ERROR'
+    });
+  }
+  
+  // Default to 500 internal server error
+  return res.status(500).json({
+    error: 'An error occurred while processing your request. Please try again.',
+    code: 'INTERNAL_ERROR',
+    details: process.env.NODE_ENV === 'development' ? error.message : undefined
+  });
+}
 
 // ─── SYSTEM PROMPTS ───────────────────────────────────────────────────────────
 
